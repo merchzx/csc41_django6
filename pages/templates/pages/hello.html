@@ -1,0 +1,22 @@
+{% load static %}
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <title>Моя перша Django-сторінка</title>
+    <link rel="stylesheet" href="{% static 'pages/style.css' %}">
+</head>
+<body>
+    <h1>Привіт, {{ student_name }}!</h1>
+    <h2>Технології</h2>
+    <ul>
+        {% for technology in technologies %}
+            <li>{{ technology }}</li>
+        {% empty %}
+            <li>Список порожній</li>
+        {% endfor %}
+    </ul>
+    <h2>Коментар користувача</h2>
+  <p id="comment">&lt;script&gt;alert(1)&lt;/script&gt;</p>
+</body>
+</html>
