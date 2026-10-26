@@ -1,0 +1,18 @@
+{% load static %}
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <title>Відгук</title>
+    <link rel="stylesheet" href="{% static 'pages/style.css' %}">
+</head>
+<body>
+    <h1>Залишити відгук</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Надіслати</button>
+    </form>
+
+</body>
+</html>
