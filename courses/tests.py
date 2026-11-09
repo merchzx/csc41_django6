@@ -39,3 +39,52 @@ class CourseViewsTests(TestCase):
     def test_missing_course(self):
         response = self.client.get(reverse("courses:detail", args=[999999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_cbv_matches_fbv(self):
+        fbv = self.client.get(
+            reverse("courses:detail", args=[self.published.pk])
+        )
+        cbv = self.client.get(
+            reverse("courses:detail-cbv", args=[self.published.pk])
+        )
+        self.assertEqual(fbv.status_code, 200)
+        self.assertEqual(cbv.status_code, 200)
+        self.assertEqual(fbv.content, cbv.content)
+
+    def test_cbv_post_not_allowed(self):
+        response = self.client.post(
+            reverse("courses:detail-cbv", args=[self.published.pk])
+        )
+        self.assertEqual(response.status_code, 405)
+
+    def test_cbv_draft_hidden_from_guest(self):
+        response = self.client.get(
+            reverse("courses:detail-cbv", args=[self.draft.pk])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_cbv_missing_course(self):
+        response = self.client.get(
+            reverse("courses:detail-cbv", args=[999999])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_list_cbv(self):
+        fbv = self.client.get(reverse("courses:list"))
+        cbv = self.client.get(reverse("courses:list-cbv"))
+
+        self.assertEqual(fbv.status_code, 200)
+        self.assertEqual(cbv.status_code, 200)
+        self.assertEqual(fbv.content, cbv.content)
+
+        for response in (fbv, cbv):
+            self.assertContains(response, "Python Backend")
+            self.assertNotContains(response, "Чернетка")
+
+    def test_json_cbv(self):
+        fbv = self.client.get(reverse("courses:json",args=[self.published.pk]))
+        cbv = self.client.get(reverse("courses:json-cbv",args=[self.published.pk]))
+
+        self.assertEqual(fbv.status_code, 200)
+        self.assertEqual(cbv.status_code, 200)
+        self.assertEqual(fbv.content, cbv.content)

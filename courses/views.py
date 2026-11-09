@@ -1,28 +1,22 @@
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from .models import Course
 from django.views.decorators.http import require_safe
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
-from .models import Course, Lesson
-from django.views.decorators.http import require_GET
+from django.shortcuts import get_object_or_404, render
+from django.views import View
 
 
 def course_list(request):
     return HttpResponse("Список курсів EduHub")
 
-
 def course_create(request):
     return HttpResponse("Форма створення курсу (демо)")
 
-
-def course_detail(request, pk):
-    return HttpResponse(f"Курс #{pk}; тип: {type(pk).__name__}")
-
 def course_by_slug(request, slug):
     return HttpResponse(f"Slug курсу: {slug}")
-
 
 def course_search(request):
     query = request.GET.get("q", "")
@@ -33,16 +27,6 @@ def visible_courses(user):
         return Course.objects.all()
     return Course.objects.filter(status="published")
 
-
-@require_safe
-def course_detail(request, pk):
-    course = get_object_or_404(visible_courses(request.user), pk=pk)
-    return render(request, "courses/detail.html", {"course": course})
-
-
-
-
-
 @require_safe
 def course_json(request, pk):
     course = get_object_or_404(visible_courses(request.user), pk=pk)
@@ -51,13 +35,6 @@ def course_json(request, pk):
         "title": course.title,
         "capacity": course.capacity,
     })
-
-
-
-@require_safe
-def course_list(request):
-    courses = visible_courses(request.user).order_by("pk")
-    return render(request, "courses/list.html", {"courses": courses})
 
 @staff_member_required
 @require_http_methods(["POST"])
@@ -74,11 +51,49 @@ def course_create(request):
                           capacity=capacity, status="draft")
     return redirect("courses:list")
 
-@require_GET
+# visible_courses(user) — наявна у проєкті функція
+# вибірки лише тих курсів, які можна показувати user.
+
+class CourseDetailView(View):
+    http_method_names = ["get", "head", "options"]
+
+    def get(self, request, pk):
+        course = get_object_or_404(visible_courses(request.user), pk=pk)
+        return render(request, "courses/detail.html", {"course": course})
+
+class CourseListView(View):
+    def get(self, request):
+        courses = visible_courses(request.user).order_by("pk")
+        return render(request, "courses/list.html", {"courses": courses})
+
+class CourseJsonView(View):
+    def get(self, request, pk):
+        course = get_object_or_404(
+            visible_courses(request.user), pk=pk
+        )
+        return JsonResponse({
+            "id": course.pk,
+            "title": course.title,
+            "capacity": course.capacity,
+        })
+
+
 @require_safe
-def lesson_detail(request, pk):
-    lesson = get_object_or_404(Lesson,pk=pk,course__status="published")
-    return JsonResponse({"id":pk,
-                                "title":lesson.title,
-                                "position":lesson.position
-                                })
+def course_detail(request, pk):
+    course = get_object_or_404(visible_courses(request.user), pk=pk)
+    return render(request, "courses/detail.html", {"course": course})
+
+
+@require_safe
+def course_list(request):
+    courses = visible_courses(request.user).order_by("pk")
+    return render(request, "courses/list.html", {"courses": courses})
+
+@require_safe
+def course_lessons(request, pk):
+    course = get_object_or_404(visible_courses(request.user), pk=pk)
+    lessons = course.lessons.order_by("position", "pk")
+    return render(request, "courses/lessons.html", {
+        "course": course,
+        "lessons": lessons,
+    })
